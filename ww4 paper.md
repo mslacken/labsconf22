@@ -3,26 +3,26 @@ title: Easy cluster deployment with warewulf v4
 author: Christian Goll <cgoll@suse.com>
 ---
 # Core concepts of warewulf v4
-Warewulf main target is to make HPC cluster deployment as easy as possible. A
-HPC cluster normally contains a larger number (up to several
+Warewulf's main purpose is to make HPC cluster deployment as easy as possible. An
+HPC cluster normally contains a large number (up to several
 thousands) of servers called compute nodes. In the ideal case all of these
-nodes have the same physical components and are not only connected with a
-management network, but also a high speed network.
+nodes have the same physical components and are connected not only with a
+management network, but also with a high speed network.
 
-In order to ensure that all computes nodes use the same operating system, the 
-operating system is booted over the management network and resides in RAM only which 
+In order to ensure that all compute nodes use the same operating system, the 
+operating system is booted over the management network and resides entirely in RAM which 
 makes this installation method stateless.
 
-Warewulf itself does not provide a methods to create operating system images for the
+Warewulf itself does not provide a method to create operating system images for the
 compute nodes, but imports these images as OCI[^3] images. This makes it easy to import
 any operating system image in a single step, as the specific node configuration is
-stored in so called overlays, which aim to be compatible to most linux flavors available.
+stored in so-called overlays, which aim to be compatible with most Linux flavors.
 
 # Operating system container
 Operating system images can be imported to warewulf with the following methods
 
-* as a OCI container archive as tar ball
-* from a OCI container registry
+* as an OCI container archive as tar ball
+* from an OCI container registry
 * from a `chroot` directory on the filesystem of the warewulf host
 
 At import time the operating system images are flattened to a simple `chroot` directory.
@@ -30,60 +30,60 @@ For convenience reasons a `resolv.conf` file for DNS resolution is copied over f
 host to the container. Additionally the UIDs and GIDs can be synchronized.
 
 For the deployment to the compute nodes compressed `cpio` images are created.
-Warewulf also provides the possibility do launch a shell within the container so that
+Warewulf also provides the ability to launch a shell within the container so that
 additional packages can be installed in the container.
 
 # Overlays
-The configuration of the compute nodes and the relevant settings of host system are 
-managed by so called overlays. These overlays are go templates[^1] and must the _.ww_ suffix, see 
+The configuration of the compute nodes and the relevant settings of the host system are 
+managed by overlays. These overlays are Go templates[^1] and must have the _.ww_ suffix; see 
 [issue.ww](#issue) for an example.
 For the compute nodes following standard services are configured:
 
 * network configuration
-* ssh-key for _root_
-* nfs mounts
+* SSH key for _root_
+* NFS mounts
 * the initial boot of the node
 
-and for the warewulf host following services are configured
+and for the warewulf host the following services are configured:
 
 * exports
 * dhpcd
 * `/etc/hosts`
 
 ## Compute node overlays
-Warewulf distinguishes two kind of overlays, for the compute node  the _system_
-or _wwinit_ overlay, which is available at boot time, but does not get updated.
-The so so called _runtime_ overlay get available after the network boot and is
+Warewulf distinguishes between two kinds of overlays for the compute nodes.  The _system_
+or _wwinit_ overlay is available at boot time, and does not get updated.
+The so-called _runtime_ overlay becomes available after the network boot and is
 updated with configurable time interval.
 
 ## Host overlays
-The host overlays are only created, if explicitly requested by the user, or if a 
+The host overlays are only created if explicitly requested by the user, or if a 
 referring configuration has been changed.
 
 # Data model
 All permanent configuration is stored in the file `node.conf` in the `yaml` format. This 
-make manual editing of this file possible, although the use of `wwctl` is encouraged.
+makes manual editing of this file possible, although the use of `wwctl` is encouraged.
 
-Compute nodes can be configured explicitly or grouped together in so called profiles. So the
-value of every configuration value can have three origins
+Compute nodes can be configured explicitly or grouped together in so-called profiles. The
+value of every configuration value can have three origins:
 
 * a default value
-* inherited by its profile
+* inherited from its profile
 * explicitly set for the compute node
 
-which have following hierarchy. If a explicit value for the node is set it overwrites the value
+If an explicit value for a node is set it overrides the value
 set from the profile, which itself takes precedence over the default value. The default value
 can't be changed by the end user. 
 
-As the origin of the values is tracked, its easy to see how which value was set as one can see int 
-the [output] of `wwctl ndoe list -a`.
+As the origin of the values is tracked, it's easy to see how each value was set as one can see in 
+the [output] of `wwctl node list -a`.
 
 # Boot process
 The whole design of warewulf is constructed around the boot process. This process uses iPXE [^2] which 
 can create *one* big filesystem in RAM out of several cpio archives and boot a linux kernel on it. 
 So the boot process has following steps:
 
-1. Bios pulls iPXE over pxe per tftp
+1. BIOS pulls iPXE over PXE via TFTP
 2. iPXE loads the kernel
 3. iPXE creates magic initrd out of the container and wwinit cpio archives
 4. iPXE boots kernel
@@ -96,11 +96,11 @@ So the boot process has following steps:
 # System services
 ## `warewulfd` system service
 Warewulf provides its own daemon called `warewulfd` which serves the kernel, container and overlay
-images per _http_ to the compute nodes.
+images via HTTP to the compute nodes.
 
-A simple security is also provided, by allowing only downloads from a privileged port.
+Simple security is also provided, by allowing only downloads from a privileged port.
 
-Also an individual asset tag can be stored in the BIOS of every compute node and allow the download 
+An individual asset tag can also be stored in the BIOS of every compute node to restrict the download 
 to nodes which asset tag matches the one stored in warewulf.
 
 ## `wwclient`
@@ -109,7 +109,7 @@ regular interval.
 
 # Examples
 ## Overlay template {#issue}
-The _system_ overlays contains following file
+The _system_ overlay contains following file
 ```
 Warewulf Node:      {{.Id}}
 Container:          {{.Container}}
